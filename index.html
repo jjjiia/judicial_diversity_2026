@@ -14,8 +14,10 @@
       --one: #ED1C24;
       --one-dark: #9E0B0F;
       --blue: #007194;
-      --tile-size: 30px;
-      --tile-gap: 4px;
+      --women-none: #9E0B0F;
+      --women-one: #F69679;
+      --tile-size: 23px;
+      --tile-gap: 3px;
     }
 
     * { box-sizing: border-box; }
@@ -76,7 +78,7 @@
 
     .legend-swatch.is-one {
       background: var(--one);
-      border-color: var(--one-dark);
+      /* border-color: var(--one-dark); */
     }
 
     .legend-swatch.is-zero { background: var(--zero); }
@@ -89,7 +91,7 @@
 
     .panel {
       min-width: 0;
-      border-top: 4px solid var(--one);
+      border-top: 4px solid var(--text);
       padding-top: 12px;
     }
 
@@ -130,7 +132,7 @@
       width: var(--tile-size);
       height: var(--tile-size);
       background: var(--zero);
-      border: 1px solid #cfcfcf;
+      /* border: 1px solid #cfcfcf; */
       color: #4d4d4d;
       font-size: 10px;
       font-weight: 700;
@@ -141,7 +143,7 @@
 
     .state.is-one {
       background: var(--one);
-      border-color: var(--one-dark);
+      /* border-color: var(--one-dark); */
       color: #fff;
     }
 
@@ -149,9 +151,38 @@
     .state:focus-visible,
     .state.is-linked-highlight {
       z-index: 3;
-      transform: scale(1.18);
-      box-shadow: 0 0 0 3px var(--blue), 0 3px 12px rgba(0,0,0,.24);
+      background: var(--blue) !important;
+      border-color: var(--blue) !important;
+      color: #fff !important;
+      transform: scale(1.08);
+      box-shadow: none;
       outline: none;
+    }
+
+    .state.is-women-none {
+      background: var(--women-none);
+      border-color: var(--women-none);
+      color: #fff;
+    }
+
+    .state.is-women-one {
+      background: var(--women-one);
+      border-color: #d77763;
+      color: #000;
+    }
+
+    .legend-swatch.is-women-none {
+      background: var(--women-none);
+      border-color: var(--women-none);
+    }
+
+    .legend-swatch.is-women-one {
+      background: var(--women-one);
+      border-color: #d77763;
+    }
+
+    .panel.is-combined {
+      border-top-color: var(--women-none);
     }
 
     .tooltip {
@@ -208,7 +239,7 @@
       .page { padding: 24px 14px 44px; }
       .small-multiples { grid-template-columns: 1fr; }
       .panel-header { min-height: 0; }
-      :root { --tile-size: 27px; --tile-gap: 3px; }
+      :root { --tile-size: 21px; --tile-gap: 3px; }
     }
   </style>
 </head>
@@ -220,7 +251,7 @@
 
     <section id="smallMultiples" class="small-multiples" aria-label="Cartogram small multiples"></section>
 
-    <p class="footnote">Washington, DC is included where it appeared in the supplied lists. Hover or focus on a state tile to see all conditions for that jurisdiction and highlight it across every cartogram.</p>
+    <!-- <p class="footnote">Washington, DC is included where it appeared in the supplied lists. Hover or focus on a state tile to see all conditions for that jurisdiction and highlight it across every cartogram.</p> -->
   </main>
 
   <div id="tooltip" class="tooltip" role="tooltip"></div>
@@ -330,10 +361,22 @@
 
       const header = document.createElement("div");
       header.className = "panel-header";
-      header.innerHTML = `
-        <h2 class="panel-title">${indicator}</h2>
-        <div class="panel-count">${count} ${count === 1 ? "jurisdiction" : "jurisdictions"}</div>
-      `;
+      const includesDC =
+  data.find(row => row.state === "District of Columbia")?.values[indicatorIndex] === 1;
+
+let countText;
+
+if (includesDC) {
+  countText = `${count - 1} states and DC`;
+} else {
+  countText = `${count} ${count === 1 ? "state" : "states"}`;
+}
+
+header.innerHTML = `
+  <h2 class="panel-title">${indicator}</h2>
+  <div class="panel-count">${countText}</div>
+`;
+      ;
 
       const wrap = document.createElement("div");
       wrap.className = "cartogram-wrap";
@@ -398,16 +441,113 @@
       const legend = document.createElement("div");
       legend.className = "legend";
       legend.setAttribute("aria-label", `${indicator} legend`);
-      legend.innerHTML = `
-        <span class="legend-item"><span class="legend-swatch is-one"></span>${legendLabels[indicatorIndex][0]}</span>
-        <span class="legend-item"><span class="legend-swatch is-zero"></span>${legendLabels[indicatorIndex][1]}</span>
-      `;
+    legend.innerHTML = `
+  <span class="legend-item">
+    <span class="legend-swatch is-one"></span>
+    ${legendLabels[indicatorIndex][0]}
+  </span>
+`;
 
       panel.appendChild(header);
       panel.appendChild(wrap);
       panel.appendChild(legend);
       container.appendChild(panel);
     });
+
+    const combinedPanel = document.createElement("article");
+    combinedPanel.className = "panel is-combined";
+
+    const noWomenCount = data.reduce((sum, row) => sum + row.values[7], 0);
+    const oneWomanCount = data.reduce((sum, row) => sum + row.values[8], 0);
+
+    const combinedHeader = document.createElement("div");
+    combinedHeader.className = "panel-header";
+    combinedHeader.innerHTML = `
+      <h2 class="panel-title">Women of color on the supreme court bench</h2>
+      <div class="panel-count">${noWomenCount} with none; ${oneWomanCount} with only one</div>
+    `;
+
+    const combinedWrap = document.createElement("div");
+    combinedWrap.className = "cartogram-wrap";
+
+    const combinedCartogram = document.createElement("div");
+    combinedCartogram.className = "cartogram";
+    combinedCartogram.setAttribute("role", "group");
+    combinedCartogram.setAttribute("aria-label", "Women of color on the supreme court bench");
+
+    data.forEach(row => {
+      const [col, gridRow] = statePositions[row.state];
+      const hasNone = row.values[7] === 1;
+      const hasOne = row.values[8] === 1;
+      const tile = document.createElement("div");
+      tile.className = `state${hasNone ? " is-women-none" : hasOne ? " is-women-one" : ""}`;
+      tile.style.left = `calc(${col} * (var(--tile-size) + var(--tile-gap)))`;
+      tile.style.top = `calc(${gridRow} * (var(--tile-size) + var(--tile-gap)))`;
+      tile.textContent = abbreviations[row.state];
+      tile.dataset.state = row.state;
+      tile.tabIndex = 0;
+      tile.setAttribute("aria-label", `${row.state}: ${hasNone ? "no women of color" : hasOne ? "only one woman of color" : "more than one woman of color"}`);
+
+      const setLinkedHighlight = (stateName, active) => {
+        document.querySelectorAll(`.state[data-state="${CSS.escape(stateName)}"]`).forEach(stateTile => {
+          stateTile.classList.toggle("is-linked-highlight", active);
+        });
+      };
+
+      const showTooltip = () => {
+        const conditionRows = indicators.map((condition, index) => `
+          <div class="tooltip-condition">
+            <span class="tooltip-value">${row.values[index]}</span>
+            <span>${condition}</span>
+          </div>
+        `).join("");
+
+        tooltip.innerHTML = `<strong class="tooltip-title">${row.state}</strong>${conditionRows}`;
+        tooltip.classList.add("is-visible");
+        setLinkedHighlight(row.state, true);
+
+        const rect = tile.getBoundingClientRect();
+        const preferredLeft = rect.left + rect.width / 2;
+        const halfWidth = Math.min(170, (window.innerWidth - 24) / 2);
+        const clampedLeft = Math.max(12 + halfWidth, Math.min(window.innerWidth - 12 - halfWidth, preferredLeft));
+        tooltip.style.left = `${clampedLeft}px`;
+        tooltip.style.top = `${Math.max(12, rect.top)}px`;
+      };
+
+      const hideTooltip = () => {
+        tooltip.classList.remove("is-visible");
+        setLinkedHighlight(row.state, false);
+      };
+
+      tile.addEventListener("mouseenter", showTooltip);
+      tile.addEventListener("focus", showTooltip);
+      tile.addEventListener("mouseleave", hideTooltip);
+      tile.addEventListener("blur", hideTooltip);
+      combinedCartogram.appendChild(tile);
+    });
+
+    combinedWrap.appendChild(combinedCartogram);
+
+    const combinedLegend = document.createElement("div");
+    combinedLegend.className = "legend";
+    combinedLegend.setAttribute("aria-label", "Women of color on the supreme court bench legend");
+ combinedLegend.innerHTML = `
+  <span class="legend-item">
+    <span class="legend-swatch is-women-none"></span>
+    No women of color
+  </span>
+
+  <span class="legend-item">
+    <span class="legend-swatch is-women-one"></span>
+    Only one woman of color
+  </span>
+`;
+
+    combinedPanel.appendChild(combinedHeader);
+    combinedPanel.appendChild(combinedWrap);
+    combinedPanel.appendChild(combinedLegend);
+    container.appendChild(combinedPanel);
+
   </script>
 </body>
 </html>
