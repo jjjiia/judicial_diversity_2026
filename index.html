@@ -329,7 +329,7 @@
 
     const indicators = [
       "No justices identify as a person of color",
-      "People of color are at least 20% of the population",
+      "No justices identify as a person of color, People of color are at least 20% of the population",
       "No Black justices",
       "No Latino justices",
       "No Asian justices",
@@ -341,7 +341,7 @@
 
     const legendLabels = [
       ["No justices identify as a person of color", "At least one justice identifies as a person of color"],
-      ["People of color are at least 20% of the population", "People of color are less than 20% of the population"],
+      ["No justices identify as a person of color, People of color are at least 20% of the population", "People of color are less than 20% of the population"],
       ["No Black justices", "At least one Black justice"],
       ["No Latino justices", "At least one Latino justice"],
       ["No Asian justices", "At least one Asian justice"],
@@ -406,10 +406,10 @@ header.innerHTML = `
 
         const showTooltip = () => {
           const conditionRows = indicators.map((condition, index) => `
-            <div class="tooltip-condition">
-              <span class="tooltip-value">${row.values[index]}</span>
-              <span>${condition}</span>
-            </div>
+           <div class="tooltip-condition">
+  <span>•</span>
+  <span>${condition}</span>
+</div>
           `).join("");
 
           tooltip.innerHTML = `<strong class="tooltip-title">${row.state}</strong>${conditionRows}`;
@@ -497,9 +497,9 @@ header.innerHTML = `
       const showTooltip = () => {
         const conditionRows = indicators.map((condition, index) => `
           <div class="tooltip-condition">
-            <span class="tooltip-value">${row.values[index]}</span>
-            <span>${condition}</span>
-          </div>
+  <span>•</span>
+  <span>${condition}</span>
+</div>
         `).join("");
 
         tooltip.innerHTML = `<strong class="tooltip-title">${row.state}</strong>${conditionRows}`;
